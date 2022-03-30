@@ -41,6 +41,7 @@ class PrSpider(scrapy.Spider):
                 link2 = 'https://www.sec.gov' + link
                 yield Request(link2,callback=self.response)
         next_page = response.xpath('//ul//li[@class="pager__item"]/a/@href').getall()
+
         if next_page:
             for i in next_page:
                 #import pdb;pdb.set_trace()
@@ -48,19 +49,20 @@ class PrSpider(scrapy.Spider):
                 print(next_page1)
                 yield Request(next_page1, callback=self.parse_categories) 
 
-
     def response(self,response):
         #import pdb;pdb.set_trace()
-        date = ''.join(response.xpath('//div[@class="article-publishdate"]//span/text()').extract()).replace('Publish Date','')
+        
+        date_d = ''.join(response.xpath('//div[@class="article-publishdate"]//span/text()').extract()).replace('Publish Date','').replace('.', '').replace('sept', 'sep').replace('March', 'Mar')
+        date_ = datetime.strptime(date_d, '%b %d, %Y').strftime('%Y-%m-%d')
+        
         video_running_time = ''.join(response.xpath('//div[@class="article-info"]//span/text()').extract()).replace('Video Running Time','')
         description = ''.join(response.xpath('.//h1/text()').extract())
         video_details = ''.join(response.xpath('.//div/p/text()').getall())
         image_url = ''.join(response.xpath('.//div[@class="field_remote_video_url"]//div/iframe/@src').extract())
         video_url = ''.join(response.xpath('.//div[@class="video-embed-field-provider-youtube video-embed-field-responsive-video"]/iframe/@src').extract())
         
-        values = (date,video_running_time,description,video_details,image_url,video_url)
+        values = (date_,video_running_time,description,video_details,image_url,video_url)
         print(values)
 
         cursor.execute(insert_query, values)
         conn.commit()
-
